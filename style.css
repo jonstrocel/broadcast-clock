@@ -1,0 +1,95 @@
+:root {
+  --bg: #000;
+  --fg: #f7f7f7;
+  --muted: #7a7a7a;
+  --accent: #d2d2d2;
+  --safe-border: #202020;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0.015em;
+}
+
+.screen {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 2.5vh 2.5vw;
+}
+
+.safe-area {
+  width: min(95vw, calc(95vh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  border: 2px solid var(--safe-border);
+  padding: clamp(1.2rem, 2vw, 2.25rem);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: clamp(0.6rem, 1.5vw, 1.4rem);
+}
+
+.status-row,
+.help-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--muted);
+  font-size: clamp(0.62rem, 1vw, 0.92rem);
+  text-transform: uppercase;
+}
+
+.help-row {
+  gap: clamp(0.5rem, 1vw, 1rem);
+  flex-wrap: wrap;
+}
+
+.mode-label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.readout {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+  gap: clamp(0.5rem, 1.3vw, 1rem);
+}
+
+.time-display {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-size: clamp(4rem, 14vw, 13rem);
+  font-weight: 700;
+  line-height: 0.95;
+  white-space: nowrap;
+}
+
+.date-display {
+  color: var(--accent);
+  font-size: clamp(1rem, 2.5vw, 2rem);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (max-aspect-ratio: 16/9) {
+  .safe-area {
+    width: 95vw;
+  }
+}
+
+@media (min-aspect-ratio: 16/9) {
+  .safe-area {
+    height: 95vh;
+    width: auto;
+  }
+}
