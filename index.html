@@ -1,1 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Broadcast Clock</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="screen" aria-live="polite">
+      <section class="safe-area" aria-label="Broadcast safe area frame">
+        <header class="status-row">
+          <span id="modeLabel" class="mode-label">CLOCK</span>
+          <span id="tzLabel" class="tz-label">America/Vancouver</span>
+        </header>
 
+        <section class="readout" aria-label="Primary time readout">
+          <div id="timeDisplay" class="time-display">00:00:00</div>
+          <div id="dateDisplay" class="date-display">—</div>
+        </section>
+
+        <footer class="control-row">
+          <form id="countdownForm" class="countdown-controls" autocomplete="off">
+            <label for="targetInput" class="target-label">Countdown target</label>
+            <input id="targetInput" class="target-input" type="time" step="60" value="19:30" aria-label="Countdown target in HH:MM" />
+            <button id="setTargetButton" class="set-target-button" type="submit">Set</button>
+          </form>
+
+          <div class="help-row" aria-label="Keyboard shortcuts">
+            <span>C Clock</span>
+            <span>D Countdown</span>
+            <span>S Stopwatch</span>
+            <span>Space Start/Pause</span>
+            <span>R Reset</span>
+          </div>
+        </footer>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
