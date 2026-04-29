@@ -4,6 +4,11 @@ A static, broadcast-safe confidence monitor clock that runs directly in the brow
 
 ## Features
 
+- Fullscreen black background with a professional confidence-monitor look
+- Oversized `HH:MM:SS` readout with tighter broadcast-style spacing
+- Default timezone: `America/Vancouver`
+- URL-controlled mode, timezone, and countdown target
+- Countdown target input field for quick on-the-fly changes
 - Fullscreen black background with a clean 16:9 safe-area frame
 - Large `HH:MM:SS` readout and date line
 - Default timezone: `America/Vancouver`
@@ -27,6 +32,10 @@ Supported `mode` values:
 - `stopwatch`
 
 `target` is used in countdown mode and must be `HH:MM` (24-hour).
+
+## Countdown target input
+
+When in countdown mode, use the target input field at the bottom to change the target time (`HH:MM`). Press `Enter` or click away to apply.
 
 ## Keyboard shortcuts
 

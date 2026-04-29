@@ -15,6 +15,8 @@
   const dateDisplay = document.getElementById("dateDisplay");
   const modeLabel = document.getElementById("modeLabel");
   const tzLabel = document.getElementById("tzLabel");
+  const targetControl = document.querySelector(".target-control");
+  const targetInput = document.getElementById("targetInput");
 
   const state = {
     mode: validModes.has(requestedMode) ? requestedMode : MODE_CLOCK,
@@ -40,6 +42,11 @@
 
   function parseTargetTime(input) {
     const matched = /^(\d{1,2}):(\d{2})$/.exec(input || "");
+    if (!matched) return { hour: 19, minute: 30, raw: "19:30" };
+
+    const hour = Number(matched[1]);
+    const minute = Number(matched[2]);
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return { hour: 19, minute: 30, raw: "19:30" };
     if (!matched) {
       return { hour: 19, minute: 30, raw: "19:30" };
     }
@@ -68,6 +75,7 @@
     });
 
     const parts = formatter.formatToParts(date).reduce((acc, part) => {
+      if (part.type !== "literal") acc[part.type] = part.value;
       if (part.type !== "literal") {
         acc[part.type] = part.value;
       }
@@ -75,6 +83,8 @@
     }, {});
 
     return {
+      year: Number(parts.year), month: Number(parts.month), day: Number(parts.day),
+      hour: Number(parts.hour), minute: Number(parts.minute), second: Number(parts.second),
       year: Number(parts.year),
       month: Number(parts.month),
       day: Number(parts.day),
@@ -97,6 +107,7 @@
     const nowSeconds = nowParts.hour * 3600 + nowParts.minute * 60 + nowParts.second;
     const targetSeconds = state.countdownTarget.hour * 3600 + state.countdownTarget.minute * 60;
     let delta = targetSeconds - nowSeconds;
+    if (delta < 0) delta += 24 * 3600;
     if (delta < 0) {
       delta += 24 * 3600;
     }
@@ -110,6 +121,8 @@
   function updateLabels() {
     modeLabel.textContent = state.mode.toUpperCase();
     tzLabel.textContent = state.timezone;
+    targetControl.classList.toggle("is-visible", state.mode === MODE_COUNTDOWN);
+    if (targetInput) targetInput.value = state.countdownTarget.raw;
   }
 
   function render() {
@@ -120,6 +133,11 @@
       timeDisplay.textContent = `${String(zoned.hour).padStart(2, "0")}:${String(zoned.minute).padStart(2, "0")}:${String(zoned.second).padStart(2, "0")}`;
       dateDisplay.textContent = formatDateLine(zoned);
     } else if (state.mode === MODE_COUNTDOWN) {
+      timeDisplay.textContent = formatHms(getCountdownSeconds(zoned));
+      dateDisplay.textContent = `TARGET ${state.countdownTarget.raw} ${state.timezone}`;
+    } else {
+      const elapsed = state.stopwatchElapsedMs + (state.stopwatchRunning ? now - state.stopwatchStartedAt : 0);
+      timeDisplay.textContent = formatHms(Math.floor(elapsed / 1000));
       const remaining = getCountdownSeconds(zoned);
       timeDisplay.textContent = formatHms(remaining);
       dateDisplay.textContent = `TARGET ${state.countdownTarget.raw} ${state.timezone}`;
@@ -132,6 +150,7 @@
   }
 
   function setMode(mode) {
+    if (!validModes.has(mode)) return;
     if (!validModes.has(mode)) {
       return;
     }
@@ -157,6 +176,37 @@
     state.stopwatchStartedAt = state.stopwatchRunning ? Date.now() : null;
   }
 
+  function applyTargetFromInput() {
+    if (!targetInput) return;
+    state.countdownTarget = parseTargetTime(targetInput.value.trim());
+    targetInput.value = state.countdownTarget.raw;
+    render();
+  }
+
+  if (targetInput) {
+    targetInput.value = state.countdownTarget.raw;
+    targetInput.addEventListener("change", applyTargetFromInput);
+    targetInput.addEventListener("blur", applyTargetFromInput);
+    targetInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        applyTargetFromInput();
+      }
+    });
+  }
+
+  window.addEventListener("keydown", (event) => {
+    if (event.target instanceof HTMLInputElement) return;
+
+    const key = event.key.toLowerCase();
+    if (key === "c") setMode(MODE_CLOCK);
+    else if (key === "d") setMode(MODE_COUNTDOWN);
+    else if (key === "s") setMode(MODE_STOPWATCH);
+    else if (event.code === "Space") {
+      event.preventDefault();
+      if (state.mode === MODE_STOPWATCH) toggleStopwatch();
+    } else if (key === "r" && state.mode === MODE_STOPWATCH) {
+      resetStopwatch();
   window.addEventListener("keydown", (event) => {
     const key = event.key.toLowerCase();
 
