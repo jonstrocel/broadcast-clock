@@ -47,6 +47,16 @@
     const hour = Number(matched[1]);
     const minute = Number(matched[2]);
     if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return { hour: 19, minute: 30, raw: "19:30" };
+    if (!matched) {
+      return { hour: 19, minute: 30, raw: "19:30" };
+    }
+
+    const hour = Number(matched[1]);
+    const minute = Number(matched[2]);
+
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
+      return { hour: 19, minute: 30, raw: "19:30" };
+    }
 
     return { hour, minute, raw: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}` };
   }
@@ -66,12 +76,21 @@
 
     const parts = formatter.formatToParts(date).reduce((acc, part) => {
       if (part.type !== "literal") acc[part.type] = part.value;
+      if (part.type !== "literal") {
+        acc[part.type] = part.value;
+      }
       return acc;
     }, {});
 
     return {
       year: Number(parts.year), month: Number(parts.month), day: Number(parts.day),
       hour: Number(parts.hour), minute: Number(parts.minute), second: Number(parts.second),
+      year: Number(parts.year),
+      month: Number(parts.month),
+      day: Number(parts.day),
+      hour: Number(parts.hour),
+      minute: Number(parts.minute),
+      second: Number(parts.second),
       weekday: (parts.weekday || "").toUpperCase(),
     };
   }
@@ -89,6 +108,9 @@
     const targetSeconds = state.countdownTarget.hour * 3600 + state.countdownTarget.minute * 60;
     let delta = targetSeconds - nowSeconds;
     if (delta < 0) delta += 24 * 3600;
+    if (delta < 0) {
+      delta += 24 * 3600;
+    }
     return delta;
   }
 
@@ -116,12 +138,22 @@
     } else {
       const elapsed = state.stopwatchElapsedMs + (state.stopwatchRunning ? now - state.stopwatchStartedAt : 0);
       timeDisplay.textContent = formatHms(Math.floor(elapsed / 1000));
+      const remaining = getCountdownSeconds(zoned);
+      timeDisplay.textContent = formatHms(remaining);
+      dateDisplay.textContent = `TARGET ${state.countdownTarget.raw} ${state.timezone}`;
+    } else {
+      const elapsed = state.stopwatchElapsedMs + (state.stopwatchRunning ? now - state.stopwatchStartedAt : 0);
+      const totalSeconds = Math.floor(elapsed / 1000);
+      timeDisplay.textContent = formatHms(totalSeconds);
       dateDisplay.textContent = state.stopwatchRunning ? "RUNNING" : "PAUSED";
     }
   }
 
   function setMode(mode) {
     if (!validModes.has(mode)) return;
+    if (!validModes.has(mode)) {
+      return;
+    }
     state.mode = mode;
     updateLabels();
     render();
@@ -175,6 +207,24 @@
       if (state.mode === MODE_STOPWATCH) toggleStopwatch();
     } else if (key === "r" && state.mode === MODE_STOPWATCH) {
       resetStopwatch();
+  window.addEventListener("keydown", (event) => {
+    const key = event.key.toLowerCase();
+
+    if (key === "c") {
+      setMode(MODE_CLOCK);
+    } else if (key === "d") {
+      setMode(MODE_COUNTDOWN);
+    } else if (key === "s") {
+      setMode(MODE_STOPWATCH);
+    } else if (event.code === "Space") {
+      event.preventDefault();
+      if (state.mode === MODE_STOPWATCH) {
+        toggleStopwatch();
+      }
+    } else if (key === "r") {
+      if (state.mode === MODE_STOPWATCH) {
+        resetStopwatch();
+      }
     }
 
     render();

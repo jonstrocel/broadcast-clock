@@ -9,6 +9,10 @@ A static, broadcast-safe confidence monitor clock that runs directly in the brow
 - Default timezone: `America/Vancouver`
 - URL-controlled mode, timezone, and countdown target
 - Countdown target input field for quick on-the-fly changes
+- Fullscreen black background with a clean 16:9 safe-area frame
+- Large `HH:MM:SS` readout and date line
+- Default timezone: `America/Vancouver`
+- URL-controlled mode and timezone
 - Keyboard controls for live operation
 - No build tools and no external dependencies
 
