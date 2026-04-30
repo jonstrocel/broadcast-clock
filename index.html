@@ -4,12 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="dark" />
-    <title>Broadcast Clock</title>
+    <title>Broadcast Clock v1.1</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <main class="screen" aria-live="polite">
-      <div class="safe-area" role="region" aria-label="Broadcast safe area">
+      <section class="safe-area" role="region" aria-label="Broadcast confidence monitor">
         <header class="status-row">
           <span id="modeLabel" class="mode-label">CLOCK</span>
           <span id="tzLabel" class="tz-label">America/Vancouver</span>
@@ -20,11 +20,22 @@
           <div id="dateDisplay" class="date-display">—</div>
         </section>
 
-        <footer class="control-row" aria-label="Controls and keyboard shortcuts">
-          <label class="target-control" for="targetInput">
-            <span class="target-label">Countdown target</span>
-            <input id="targetInput" class="target-input" type="text" inputmode="numeric" placeholder="19:30" maxlength="5" aria-label="Countdown target in 24-hour HH:MM format" />
-          </label>
+        <footer class="control-row" aria-label="Controls and shortcuts">
+          <form id="countdownForm" class="countdown-form" autocomplete="off">
+            <label for="targetInput" class="target-label">Countdown target</label>
+            <div class="target-group">
+              <input
+                id="targetInput"
+                class="target-input"
+                type="text"
+                inputmode="numeric"
+                placeholder="19:30"
+                maxlength="5"
+                aria-label="Countdown target in 24-hour HH:MM format"
+              />
+              <button id="setTargetButton" class="set-button" type="submit">Set</button>
+            </div>
+          </form>
 
           <div class="help-row" aria-label="Keyboard shortcuts">
             <span>C Clock</span>
@@ -33,14 +44,8 @@
             <span>Space Start/Pause</span>
             <span>R Reset</span>
           </div>
-        <footer class="help-row" aria-label="Keyboard shortcuts">
-          <span>C Clock</span>
-          <span>D Countdown</span>
-          <span>S Stopwatch</span>
-          <span>Space Start/Pause</span>
-          <span>R Reset</span>
         </footer>
-      </div>
+      </section>
     </main>
 
     <script src="script.js"></script>
