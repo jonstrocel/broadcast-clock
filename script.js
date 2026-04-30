@@ -1,69 +1,61 @@
 (() => {
   const DEFAULT_TZ = "America/Vancouver";
+  const DEFAULT_TARGET = "19:30";
   const MODE_CLOCK = "clock";
   const MODE_COUNTDOWN = "countdown";
   const MODE_STOPWATCH = "stopwatch";
+  const validModes = new Set([MODE_CLOCK, MODE_COUNTDOWN, MODE_STOPWATCH]);
 
   const params = new URLSearchParams(window.location.search);
-  const requestedMode = (params.get("mode") || MODE_CLOCK).toLowerCase();
-  const requestedTz = params.get("tz") || DEFAULT_TZ;
-  const targetClock = params.get("target") || "19:30";
-
-  const validModes = new Set([MODE_CLOCK, MODE_COUNTDOWN, MODE_STOPWATCH]);
 
   const timeDisplay = document.getElementById("timeDisplay");
   const dateDisplay = document.getElementById("dateDisplay");
   const modeLabel = document.getElementById("modeLabel");
   const tzLabel = document.getElementById("tzLabel");
-  const targetControl = document.querySelector(".target-control");
+  const countdownForm = document.getElementById("countdownForm");
   const targetInput = document.getElementById("targetInput");
 
   const state = {
-    mode: validModes.has(requestedMode) ? requestedMode : MODE_CLOCK,
-    timezone: requestedTz,
-    countdownTarget: parseTargetTime(targetClock),
+    mode: normalizeMode(params.get("mode")),
+    timezone: normalizeTimezone(params.get("timezone") || params.get("tz") || DEFAULT_TZ),
+    countdownTarget: parseTargetTime(params.get("target") || DEFAULT_TARGET),
     stopwatchElapsedMs: 0,
     stopwatchRunning: false,
-    stopwatchStartedAt: null,
+    stopwatchStartedAtMs: 0,
   };
 
-  function isValidTimezone(tz) {
+  function normalizeMode(mode) {
+    const value = (mode || MODE_CLOCK).toLowerCase();
+    return validModes.has(value) ? value : MODE_CLOCK;
+  }
+
+  function normalizeTimezone(tz) {
     try {
       new Intl.DateTimeFormat("en-US", { timeZone: tz }).format(new Date());
-      return true;
+      return tz;
     } catch {
-      return false;
+      return DEFAULT_TZ;
     }
   }
 
-  if (!isValidTimezone(state.timezone)) {
-    state.timezone = DEFAULT_TZ;
+  function parseTargetTime(text) {
+    const match = /^(\d{1,2}):(\d{2})$/.exec((text || "").trim());
+    if (!match) return parseTargetTime(DEFAULT_TARGET);
+
+    const hour = Number(match[1]);
+    const minute = Number(match[2]);
+    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return parseTargetTime(DEFAULT_TARGET);
+
+    return {
+      hour,
+      minute,
+      raw: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
+    };
   }
 
-  function parseTargetTime(input) {
-    const matched = /^(\d{1,2}):(\d{2})$/.exec(input || "");
-    if (!matched) return { hour: 19, minute: 30, raw: "19:30" };
-
-    const hour = Number(matched[1]);
-    const minute = Number(matched[2]);
-    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return { hour: 19, minute: 30, raw: "19:30" };
-    if (!matched) {
-      return { hour: 19, minute: 30, raw: "19:30" };
-    }
-
-    const hour = Number(matched[1]);
-    const minute = Number(matched[2]);
-
-    if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-      return { hour: 19, minute: 30, raw: "19:30" };
-    }
-
-    return { hour, minute, raw: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}` };
-  }
-
-  function getZonedParts(date, timezone) {
+  function getZonedParts(date) {
     const formatter = new Intl.DateTimeFormat("en-CA", {
-      timeZone: timezone,
+      timeZone: state.timezone,
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -76,15 +68,10 @@
 
     const parts = formatter.formatToParts(date).reduce((acc, part) => {
       if (part.type !== "literal") acc[part.type] = part.value;
-      if (part.type !== "literal") {
-        acc[part.type] = part.value;
-      }
       return acc;
     }, {});
 
     return {
-      year: Number(parts.year), month: Number(parts.month), day: Number(parts.day),
-      hour: Number(parts.hour), minute: Number(parts.minute), second: Number(parts.second),
       year: Number(parts.year),
       month: Number(parts.month),
       day: Number(parts.day),
@@ -96,107 +83,94 @@
   }
 
   function formatHms(totalSeconds) {
-    const clamped = Math.max(0, totalSeconds);
-    const hours = Math.floor(clamped / 3600);
-    const minutes = Math.floor((clamped % 3600) / 60);
-    const seconds = clamped % 60;
+    const t = Math.max(0, totalSeconds);
+    const hours = Math.floor(t / 3600);
+    const minutes = Math.floor((t % 3600) / 60);
+    const seconds = t % 60;
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   }
 
-  function getCountdownSeconds(nowParts) {
-    const nowSeconds = nowParts.hour * 3600 + nowParts.minute * 60 + nowParts.second;
+  function countdownRemaining(parts) {
+    const nowSeconds = parts.hour * 3600 + parts.minute * 60 + parts.second;
     const targetSeconds = state.countdownTarget.hour * 3600 + state.countdownTarget.minute * 60;
     let delta = targetSeconds - nowSeconds;
     if (delta < 0) delta += 24 * 3600;
-    if (delta < 0) {
-      delta += 24 * 3600;
-    }
     return delta;
   }
 
-  function formatDateLine(parts) {
-    return `${parts.weekday} ${String(parts.year).padStart(4, "0")}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+  function formatDate(parts) {
+    return `${parts.weekday} ${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+  }
+
+  function updateQueryParams() {
+    const next = new URLSearchParams();
+    next.set("mode", state.mode);
+    next.set("timezone", state.timezone);
+    if (state.mode === MODE_COUNTDOWN) next.set("target", state.countdownTarget.raw);
+    history.replaceState(null, "", `${window.location.pathname}?${next.toString()}`);
   }
 
   function updateLabels() {
     modeLabel.textContent = state.mode.toUpperCase();
     tzLabel.textContent = state.timezone;
-    targetControl.classList.toggle("is-visible", state.mode === MODE_COUNTDOWN);
-    if (targetInput) targetInput.value = state.countdownTarget.raw;
+    countdownForm.classList.toggle("is-visible", state.mode === MODE_COUNTDOWN);
+    targetInput.value = state.countdownTarget.raw;
   }
 
   function render() {
     const now = new Date();
-    const zoned = getZonedParts(now, state.timezone);
+    const zoned = getZonedParts(now);
 
     if (state.mode === MODE_CLOCK) {
       timeDisplay.textContent = `${String(zoned.hour).padStart(2, "0")}:${String(zoned.minute).padStart(2, "0")}:${String(zoned.second).padStart(2, "0")}`;
-      dateDisplay.textContent = formatDateLine(zoned);
-    } else if (state.mode === MODE_COUNTDOWN) {
-      timeDisplay.textContent = formatHms(getCountdownSeconds(zoned));
-      dateDisplay.textContent = `TARGET ${state.countdownTarget.raw} ${state.timezone}`;
-    } else {
-      const elapsed = state.stopwatchElapsedMs + (state.stopwatchRunning ? now - state.stopwatchStartedAt : 0);
-      timeDisplay.textContent = formatHms(Math.floor(elapsed / 1000));
-      const remaining = getCountdownSeconds(zoned);
-      timeDisplay.textContent = formatHms(remaining);
-      dateDisplay.textContent = `TARGET ${state.countdownTarget.raw} ${state.timezone}`;
-    } else {
-      const elapsed = state.stopwatchElapsedMs + (state.stopwatchRunning ? now - state.stopwatchStartedAt : 0);
-      const totalSeconds = Math.floor(elapsed / 1000);
-      timeDisplay.textContent = formatHms(totalSeconds);
-      dateDisplay.textContent = state.stopwatchRunning ? "RUNNING" : "PAUSED";
+      dateDisplay.textContent = formatDate(zoned);
+      return;
     }
+
+    if (state.mode === MODE_COUNTDOWN) {
+      timeDisplay.textContent = formatHms(countdownRemaining(zoned));
+      dateDisplay.textContent = `TARGET ${state.countdownTarget.raw} ${state.timezone}`;
+      return;
+    }
+
+    const elapsed = state.stopwatchElapsedMs + (state.stopwatchRunning ? Date.now() - state.stopwatchStartedAtMs : 0);
+    timeDisplay.textContent = formatHms(Math.floor(elapsed / 1000));
+    dateDisplay.textContent = state.stopwatchRunning ? "RUNNING" : "PAUSED";
   }
 
   function setMode(mode) {
     if (!validModes.has(mode)) return;
-    if (!validModes.has(mode)) {
-      return;
-    }
     state.mode = mode;
     updateLabels();
+    updateQueryParams();
     render();
   }
 
   function toggleStopwatch() {
-    const now = Date.now();
     if (state.stopwatchRunning) {
-      state.stopwatchElapsedMs += now - state.stopwatchStartedAt;
-      state.stopwatchStartedAt = null;
+      state.stopwatchElapsedMs += Date.now() - state.stopwatchStartedAtMs;
       state.stopwatchRunning = false;
-    } else {
-      state.stopwatchStartedAt = now;
-      state.stopwatchRunning = true;
+      return;
     }
+    state.stopwatchStartedAtMs = Date.now();
+    state.stopwatchRunning = true;
   }
 
   function resetStopwatch() {
     state.stopwatchElapsedMs = 0;
-    state.stopwatchStartedAt = state.stopwatchRunning ? Date.now() : null;
+    if (state.stopwatchRunning) state.stopwatchStartedAtMs = Date.now();
   }
 
-  function applyTargetFromInput() {
-    if (!targetInput) return;
-    state.countdownTarget = parseTargetTime(targetInput.value.trim());
-    targetInput.value = state.countdownTarget.raw;
+  countdownForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    state.countdownTarget = parseTargetTime(targetInput.value);
+    updateQueryParams();
+    updateLabels();
     render();
-  }
-
-  if (targetInput) {
-    targetInput.value = state.countdownTarget.raw;
-    targetInput.addEventListener("change", applyTargetFromInput);
-    targetInput.addEventListener("blur", applyTargetFromInput);
-    targetInput.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        applyTargetFromInput();
-      }
-    });
-  }
+  });
 
   window.addEventListener("keydown", (event) => {
-    if (event.target instanceof HTMLInputElement) return;
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLButtonElement) return;
 
     const key = event.key.toLowerCase();
     if (key === "c") setMode(MODE_CLOCK);
@@ -207,30 +181,13 @@
       if (state.mode === MODE_STOPWATCH) toggleStopwatch();
     } else if (key === "r" && state.mode === MODE_STOPWATCH) {
       resetStopwatch();
-  window.addEventListener("keydown", (event) => {
-    const key = event.key.toLowerCase();
-
-    if (key === "c") {
-      setMode(MODE_CLOCK);
-    } else if (key === "d") {
-      setMode(MODE_COUNTDOWN);
-    } else if (key === "s") {
-      setMode(MODE_STOPWATCH);
-    } else if (event.code === "Space") {
-      event.preventDefault();
-      if (state.mode === MODE_STOPWATCH) {
-        toggleStopwatch();
-      }
-    } else if (key === "r") {
-      if (state.mode === MODE_STOPWATCH) {
-        resetStopwatch();
-      }
     }
 
     render();
   });
 
   updateLabels();
+  updateQueryParams();
   render();
-  setInterval(render, 1000);
+  setInterval(render, 250);
 })();

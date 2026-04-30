@@ -1,46 +1,56 @@
-# Broadcast Clock
+# Broadcast Clock v1.1
 
-A static, broadcast-safe confidence monitor clock that runs directly in the browser (including GitHub Pages).
+Broadcast Clock is a static confidence-monitor timer display designed for live production use. It runs as plain HTML/CSS/JS and works directly on GitHub Pages.
 
 ## Features
 
-- Fullscreen black background with a professional confidence-monitor look
-- Oversized `HH:MM:SS` readout with tighter broadcast-style spacing
-- Default timezone: `America/Vancouver`
-- URL-controlled mode, timezone, and countdown target
-- Countdown target input field for quick on-the-fly changes
-- Fullscreen black background with a clean 16:9 safe-area frame
-- Large `HH:MM:SS` readout and date line
-- Default timezone: `America/Vancouver`
-- URL-controlled mode and timezone
-- Keyboard controls for live operation
-- No build tools and no external dependencies
+- Broadcast-safe 16:9 monitor styling on a black background
+- Three modes:
+  - `clock`
+  - `countdown`
+  - `stopwatch`
+- Countdown target input with a **Set** button (`HH:MM`, 24-hour)
+- Keyboard controls for fast operation
+- URL parameters for mode, target time, and timezone
+- Dependency-free: no build tools, no external libraries
 
-## Usage
+## Quick start
 
-Open `index.html` directly or host via GitHub Pages.
+Open `index.html` locally, or publish the repository using GitHub Pages.
 
-### URL parameters
+## URL parameters
 
-- `?tz=America/Vancouver`
-- `?mode=countdown&target=19:30`
+Example:
 
-Supported `mode` values:
+- `?mode=countdown&target=19:30&timezone=America/Vancouver`
 
-- `clock`
-- `countdown`
-- `stopwatch`
+Supported parameters:
 
-`target` is used in countdown mode and must be `HH:MM` (24-hour).
+- `mode` — `clock`, `countdown`, `stopwatch`
+- `target` — countdown target in `HH:MM` format
+- `timezone` — IANA timezone value (for example `America/Vancouver`)
+- `tz` — legacy alias for timezone (still accepted)
 
-## Countdown target input
+Invalid values automatically fall back to:
 
-When in countdown mode, use the target input field at the bottom to change the target time (`HH:MM`). Press `Enter` or click away to apply.
+- `mode=clock`
+- `timezone=America/Vancouver`
+- `target=19:30`
 
 ## Keyboard shortcuts
 
-- `C` = clock mode
-- `D` = countdown mode
-- `S` = stopwatch mode
-- `Space` = start/pause stopwatch
-- `R` = reset stopwatch
+- `C` — Clock mode
+- `D` — Countdown mode
+- `S` — Stopwatch mode
+- `Space` — Start/Pause stopwatch
+- `R` — Reset stopwatch
+
+## GitHub Pages compatibility
+
+This app is fully static and GitHub Pages compatible:
+
+- `index.html`
+- `style.css`
+- `script.js`
+
+No bundling or server-side runtime required.
